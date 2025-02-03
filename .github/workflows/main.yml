@@ -80,7 +80,6 @@ jobs:
 
       - name: Deploy
         run: |
-          deploy-command \
             --use_existing_version_if_available true
 
       - name: Generate deployment package
