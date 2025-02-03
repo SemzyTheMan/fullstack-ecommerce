@@ -9,7 +9,6 @@ services:
       - "8080:8080"
     networks:
       - app-network
-
   nginx:
     image: AWS_ACCOUNT_ID.dkr.ecr.AWS_REGION.amazonaws.com/IMAGE_NAME:IMAGE_TAG_NGINX
     restart: always
