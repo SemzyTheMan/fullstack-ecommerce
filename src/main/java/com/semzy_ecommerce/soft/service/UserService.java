@@ -17,8 +17,6 @@ public class UserService  {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-
-
     @Transactional
     public void registerUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
