@@ -1,0 +1,14 @@
+# Use the official Nginx image as a base
+FROM nginx:latest
+
+# Copy custom configuration file (if you have one)
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copy static files (if you have any)
+COPY ./static /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
