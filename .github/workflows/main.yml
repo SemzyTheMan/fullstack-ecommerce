@@ -78,6 +78,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Deploy
+        run: |
+          deploy-command \
+            --use_existing_version_if_available true
+
       - name: Generate deployment package
         run: |
           cp docker-compose-template.yml docker-compose.editing.yml
