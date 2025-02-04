@@ -1,13 +1,19 @@
-name: Deploy to Elastic Beanstalk
+name: Build and Deployment
 
 on:
   push:
     branches:
       - main
+    
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    outputs:
+      ENVIRONMENT: ${{ steps.generate-env.outputs.ENVIRONMENT }}
+      APP_NAME: ${{ steps.repo-name.outputs.repository-name }}
+      IMAGE_TAG_NGINX: nginx-${{ steps.generate-env.outputs.ENVIRONMENT }}-${{ github.run_number }}
+      IMAGE_TAG_APP: app-${{ steps.generate-env.outputs.ENVIRONMENT }}-${{ github.run_number }}
     steps:
       - name: Checkout Source
         uses: actions/checkout@v4
