@@ -1,102 +1,30 @@
-name: Build and Deployment
+name: Deploy to Elastic Beanstalk
 
 on:
   push:
     branches:
       - main
-    
 
 jobs:
-  build-image:
-    name: Build Image
+  build-and-deploy:
     runs-on: ubuntu-latest
-    outputs:
-      ENVIRONMENT: ${{ steps.generate-env.outputs.ENVIRONMENT }}
-      APP_NAME: ${{ steps.repo-name.outputs.repository-name }}
-      IMAGE_TAG_NGINX: nginx-${{ steps.generate-env.outputs.ENVIRONMENT }}-${{ github.run_number }}
-      IMAGE_TAG_APP: app-${{ steps.generate-env.outputs.ENVIRONMENT }}-${{ github.run_number }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - uses: FranzDiebold/github-env-vars-action@v2
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Checkout Source
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Get repository name
-        id: repo-name
-        uses: MariachiBear/get-repo-name-action@v1.2.0
-        with:
-          string-case: "lowercase"
-
-      - name: Generate Environment Name
-        id: generate-env
-        run: |
-          if [ "${GITHUB_REF##*/}" = "main" ]; then echo "ENVIRONMENT=prod" >> $GITHUB_OUTPUT; fi
-          if [ "${GITHUB_REF##*/}" = "dev" ]; then echo "ENVIRONMENT=dev" >> $GITHUB_OUTPUT; fi
-          if [ "${GITHUB_REF##*/}" = "staging" ]; then echo "ENVIRONMENT=staging" >> $GITHUB_OUTPUT; fi
-          if [ "${GITHUB_REF##*/}" = "test" ]; then echo "ENVIRONMENT=test" >> $GITHUB_OUTPUT; fi
-
-      - name: Build and push the image Application to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ steps.repo-name.outputs.repository-name }}
-          IMAGE_TAG: app-${{ steps.generate-env.outputs.ENVIRONMENT }}-${{ github.run_number }}
-          # ENVFILE: ${{ secrets.ENVFILE }}
-        run: |
-          echo "Build the application docker image"
-          echo ${{ secrets.ENVFILE }} >> .env
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          echo "Pushing the image to ECR..."
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-      - name: Build and push the image Nginx to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ steps.repo-name.outputs.repository-name }}
-          IMAGE_TAG: nginx-${{ steps.generate-env.outputs.ENVIRONMENT }}-${{ github.run_number }}
-        run: |
-          echo "Build the nginx docker image"
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./nginx
-          echo "Pushing the image to ECR..."
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          
-  deployment:
-    name: Deploy Application
-    runs-on: ubuntu-latest
-    needs: [build-image]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Generate deployment package
-        run: |
-          cp docker-compose-template.yml docker-compose.editing.yml
-          sed -i 's/AWS_ACCOUNT_ID/'"${{ secrets.AWS_ACCOUNT_ID }}"'/g' docker-compose.editing.yml
-          sed -i 's/IMAGE_TAG_APP/'"${{ needs.build-image.outputs.IMAGE_TAG_APP }}"'/g' docker-compose.editing.yml
-          sed -i 's/IMAGE_TAG_NGINX/'"${{ needs.build-image.outputs.IMAGE_TAG_NGINX }}"'/g' docker-compose.editing.yml
-          sed -i 's/AWS_REGION/'"${{ secrets.AWS_REGION }}"'/g' docker-compose.editing.yml
-          sed -i 's/IMAGE_NAME/'"${{ needs.build-image.outputs.APP_NAME }}"'/g' docker-compose.editing.yml
-          mv docker-compose.editing.yml docker-compose.yml
-          cat docker-compose.yml
-          zip -r deploy.zip ./docker-compose.yml
-
-      - name: Deploy Docker images to EB
-        uses: einaregilsson/beanstalk-deploy@v20
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Build Project
+        run: mvn clean install -DskipTests
+      - name: Deploy to EB
+        uses: einaregilsson/beanstalk-deploy@v21
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY }}
-          aws_secret_key: ${{ secrets.AWS_SECRET_KEY }}
-          application_name: ${{ needs.build-image.outputs.APP_NAME }}
-          environment_name: ${{ needs.build-image.outputs.APP_NAME }}-${{ needs.build-image.outputs.ENVIRONMENT }}
-          region: ${{ secrets.AWS_REGION }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: 'fullstack-ecommerce'
+          environment_name: 'Fullstack-ecommerce-env'
           version_label: ${{ github.sha }}
-          deployment_package: deploy.zip
+          region: eu-north-1
+          deployment_package: target/fullstack-ecommerce.jar
