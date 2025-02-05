@@ -37,6 +37,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
+                .cors(c -> c.configurationSource(customCorsConfiguration))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/category/**").permitAll()
@@ -66,7 +67,7 @@ public class SecurityConfig {
 
                             response.getWriter().write(jsonResponse);
                         })
-                ).cors(c -> c.configurationSource(customCorsConfiguration))
+                )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
