@@ -126,12 +126,23 @@ public class TransactionService {
             User user = userRepository.findById(purchaseDetails.getUser().getId())
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
             Cart userCart = user.getCart();
+            List<PurchasedItem> itemsBought = purchaseDetails.getPurchasedItems();
+            List<Product> productsBought =new ArrayList<>();
 
+
+            for(PurchasedItem item : itemsBought){
+                Product tempProduct = item.getProduct();
+                tempProduct.setQuantityAvailable(tempProduct.getQuantityAvailable()-item.getQuantity());
+                productsBought.add(tempProduct);
+
+
+            }
             if(status.equalsIgnoreCase("successful") && userCart.getTotalAmount()==amount){
                 purchaseDetails.setStatus("success");
                 user.setCart(null);
                 cartRepository.deleteById(userCart.getId());
                 userRepository.save(user);
+                productsBought.forEach(p->productRepository.save(p));
             }
 
 

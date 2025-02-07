@@ -17,7 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @Service
@@ -36,7 +38,7 @@ public class CartService {
     private ProductRepository productRepository;
 
     @Transactional
-    public void addItemToCart(int userId, CartItem cartItem) {
+    public void addItemToCart(int userId, List<CartItem> cartItems) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
@@ -47,29 +49,16 @@ public class CartService {
             existingUserCart.setCartItems(new ArrayList<>());
         }
 
-        // Create a new CartItem or update existing one
-        boolean productExists = false;
-        List<CartItem> items = existingUserCart.getCartItems();
-        CartItem existingItem = null;
-
-        // Find existing item first
-        for (CartItem item : items) {
-            if (item.getProductId() == cartItem.getProductId()) {
-                existingItem = item;
-                productExists = true;
-                break;
-            }
+        Map<Integer, CartItem> existingCartMap = new HashMap<>();
+        for (CartItem existingItem : existingUserCart.getCartItems()) {
+            existingCartMap.put(existingItem.getProductId(), existingItem);
         }
 
-        // Update or add outside the loop
-        if (productExists) {
-            items.remove(existingItem);
-            cartItemRepository.deleteById(existingItem.getId());
-            items.add(cartItem);
-        } else {
-            items.add(cartItem);
+        for (CartItem item : cartItems) {
+            existingCartMap.put(item.getProductId(), item); // Replace or add
         }
 
+        existingUserCart.setCartItems(new ArrayList<>(existingCartMap.values()));
         user.setCart(existingUserCart);
         userRepository.save(user);
     }

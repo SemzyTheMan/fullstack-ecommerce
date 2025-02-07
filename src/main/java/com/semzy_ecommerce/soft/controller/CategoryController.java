@@ -30,6 +30,7 @@ public class CategoryController {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Category> createCategory(@ModelAttribute CategoryRequest categoryRequest) {
 
         String imageUrl = cloudinaryService

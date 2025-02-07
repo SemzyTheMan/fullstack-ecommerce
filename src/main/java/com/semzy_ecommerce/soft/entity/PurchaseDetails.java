@@ -2,6 +2,7 @@ package com.semzy_ecommerce.soft.entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +30,9 @@ public class PurchaseDetails {
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "purchase_details_id")
     private List<PurchasedItem> purchasedItems;
+
+    @Column(name="date")
+    private LocalDateTime time = LocalDateTime.now();
 
     public PurchaseDetails() {
     }
