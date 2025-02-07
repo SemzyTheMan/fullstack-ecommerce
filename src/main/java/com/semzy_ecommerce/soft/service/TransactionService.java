@@ -50,7 +50,7 @@ public class TransactionService {
         PaymentRequest paymentRequest = new PaymentRequest();
         paymentRequest.setTx_ref(transactionRef);
         paymentRequest.setAmount(user.getCart().getTotalAmount());
-        paymentRequest.setRedirect_url("http://localhost:3000");
+        paymentRequest.setRedirect_url("http://localhost:3000https://semzy-audiophile.vercel.app");
         paymentRequest.setCustomer(customer);
 
         HttpHeaders headers = new HttpHeaders();
